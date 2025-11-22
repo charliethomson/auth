@@ -1,5 +1,9 @@
 use clap::{Parser, ValueEnum};
-use poem::{EndpointExt, Route, Server, listener::TcpListener, middleware::Tracing};
+use poem::{
+    EndpointExt, Route, Server,
+    listener::TcpListener,
+    middleware::{Cors, Tracing},
+};
 use poem_openapi::OpenApiService;
 use tracing_subscriber::{Registry, fmt, layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -108,7 +112,8 @@ async fn main() -> anyhow::Result<()> {
                 .nest(debug_api_docs_prefix, debug_api_ui)
                 .data(services)
                 .data(repositories)
-                .with(Tracing),
+                .with(Tracing)
+                .with(Cors::new()),
         )
         .await?;
 
