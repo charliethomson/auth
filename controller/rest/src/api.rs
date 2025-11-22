@@ -8,7 +8,7 @@ use data::repository::{
 use libbuildinfo::BuildInfo;
 use poem::{Request, http::StatusCode, web::Data};
 use poem_openapi::{
-    OpenApi, SecurityScheme,
+    OpenApi, SecurityScheme, Tags,
     auth::Bearer,
     param::{Path, Query},
     payload::{Json, PlainText},
@@ -46,6 +46,7 @@ use crate::{
             },
         },
     },
+    util::grants::{Grants, HasGrants},
 };
 
 #[derive(Debug, Error, Clone, Serialize, Deserialize, Valuable)]
@@ -138,9 +139,16 @@ impl SwaggerApi for ManageApi {
     }
 }
 
+#[derive(Tags)]
+pub enum ManageTags {
+    User,
+    Application,
+    Grant,
+}
+
 #[OpenApi]
 impl ManageApi {
-    #[oai(path = "/user", method = "post")]
+    #[oai(path = "/user", method = "post", tag = ManageTags::User)]
     async fn user_create(
         &self,
         repositories: Data<&ApiRepositories>,
@@ -148,234 +156,172 @@ impl ManageApi {
         claims: BearerJwt,
         payload: Json<CreateUserPayload>,
     ) -> CreateUserResponse {
-        if !claims
-            .0
-            .grants
-            .contains(&"dev.thmsn.auth.user.create".to_string())
-        {
+        if !claims.0.has_grants(&[Grants::UserCreate]) {
             return CreateUserResponse::Unauthorized;
         }
 
-        create_user(
-            repositories.0.clone(),
-            services.0.clone(),
-            payload.0,
-            &format!("user.create:{}", claims.0.user_id),
-        )
-        .await
+        let agent = &format!("user.create:{}", claims.0.user_id);
+
+        create_user(repositories.0.clone(), services.0.clone(), payload.0, agent).await
     }
 
-    #[oai(path = "/user/:user_id", method = "delete")]
+    #[oai(path = "/user/:user_id", method = "delete", tag = ManageTags::User)]
     async fn user_delete(
         &self,
         repositories: Data<&ApiRepositories>,
         claims: BearerJwt,
         user_id: Path<i32>,
     ) -> DeleteUserResponse {
-        if !claims
-            .0
-            .grants
-            .contains(&"dev.thmsn.auth.user.delete".to_string())
-        {
+        if !claims.0.has_grants(&[Grants::UserDelete]) {
             return DeleteUserResponse::Unauthorized;
         }
 
         delete_user(repositories.0.clone(), *user_id).await
     }
 
-    #[oai(path = "/user", method = "get")]
+    #[oai(path = "/user", method = "get", tag = ManageTags::User)]
     async fn user_list(
         &self,
         repositories: Data<&ApiRepositories>,
         claims: BearerJwt,
         enabled: Query<Option<bool>>,
     ) -> ListUsersResponse {
-        if !claims
-            .0
-            .grants
-            .contains(&"dev.thmsn.auth.user.list".to_string())
-        {
+        if !claims.0.has_grants(&[Grants::UserList]) {
             return ListUsersResponse::Unauthorized;
         }
 
         list_users(repositories.0.clone(), enabled.0).await
     }
 
-    #[oai(path = "/user/:user_id", method = "get")]
+    #[oai(path = "/user/:user_id", method = "get", tag = ManageTags::User)]
     async fn user_get(
         &self,
         repositories: Data<&ApiRepositories>,
         claims: BearerJwt,
         user_id: Path<i32>,
     ) -> GetUserResponse {
-        if !claims
-            .0
-            .grants
-            .contains(&"dev.thmsn.auth.user.get".to_string())
-        {
+        if !claims.0.has_grants(&[Grants::UserGet]) {
             return GetUserResponse::Unauthorized;
         }
 
         get_user(repositories.0.clone(), user_id.0).await
     }
 
-    #[oai(path = "/user/grants", method = "put")]
+    #[oai(path = "/user/grants", method = "put", tag = ManageTags::User, tag = ManageTags::Grant)]
     async fn user_update_grant(
         &self,
         repositories: Data<&ApiRepositories>,
         claims: BearerJwt,
         payload: Json<ModifyGrantPayload>,
     ) -> ModifyGrantResponse {
-        if !claims
-            .0
-            .grants
-            .contains(&"dev.thmsn.auth.user.grant.update".to_string())
-        {
+        if !claims.0.has_grants(&[Grants::UserGrantUpdate]) {
             return ModifyGrantResponse::Unauthorized;
         }
 
-        modify_grant(
-            repositories.0.clone(),
-            payload.0,
-            &format!("user.create:{}", claims.0.user_id),
-        )
-        .await
+        let agent = &format!(
+            "user.modify_grant:{}:{}",
+            claims.0.user_id, payload.0.grant_id
+        );
+
+        modify_grant(repositories.0.clone(), payload.0, agent).await
     }
 
-    #[oai(path = "/application", method = "post")]
+    #[oai(path = "/application", method = "post", tag = ManageTags::Application)]
     async fn create_application(
         &self,
         repositories: Data<&ApiRepositories>,
         claims: BearerJwt,
         payload: Json<CreateApplicationPayload>,
     ) -> CreateApplicationResponse {
-        if !claims
-            .0
-            .grants
-            .contains(&"dev.thmsn.auth.application.create".to_string())
-        {
+        if !claims.0.has_grants(&[Grants::ApplicationCreate]) {
             return CreateApplicationResponse::Unauthorized;
         }
 
-        create_application(
-            repositories.0.clone(),
-            payload.0,
-            &format!("application.create:{}", claims.0.user_id),
-        )
-        .await
+        let agent = &format!("application.create:{}", claims.0.user_id);
+
+        create_application(repositories.0.clone(), payload.0, &agent).await
     }
 
-    #[oai(path = "/application/:application_id", method = "get")]
+    #[oai(path = "/application/:application_id", method = "get", tag = ManageTags::Application)]
     async fn get_application(
         &self,
         repositories: Data<&ApiRepositories>,
         claims: BearerJwt,
         application_id: Path<String>,
     ) -> GetApplicationResponse {
-        if !claims
-            .0
-            .grants
-            .contains(&"dev.thmsn.auth.application.get".to_string())
-        {
+        if !claims.0.has_grants(&[Grants::ApplicationGet]) {
             return GetApplicationResponse::Unauthorized;
         }
 
         get_application(repositories.0.clone(), application_id.0).await
     }
 
-    #[oai(path = "/application", method = "get")]
+    #[oai(path = "/application", method = "get", tag = ManageTags::Application)]
     async fn list_applications(
         &self,
         repositories: Data<&ApiRepositories>,
         claims: BearerJwt,
     ) -> ListApplicationsResponse {
-        if !claims
-            .0
-            .grants
-            .contains(&"dev.thmsn.auth.application.list".to_string())
-        {
+        if !claims.0.has_grants(&[Grants::ApplicationList]) {
             return ListApplicationsResponse::Unauthorized;
         }
 
         list_applications(repositories.0.clone()).await
     }
 
-    #[oai(path = "/application", method = "put")]
+    #[oai(path = "/application", method = "put", tag = ManageTags::Application)]
     async fn update_application(
         &self,
         repositories: Data<&ApiRepositories>,
         claims: BearerJwt,
         payload: Json<UpdateApplicationPayload>,
     ) -> UpdateApplicationResponse {
-        if !claims
-            .0
-            .grants
-            .contains(&"dev.thmsn.auth.application.list".to_string())
-        {
+        if !claims.0.has_grants(&[Grants::ApplicationUpdate]) {
             return UpdateApplicationResponse::Unauthorized;
         }
+        let agent = &format!("application.update:{}", claims.0.user_id);
 
-        update_application(
-            repositories.0.clone(),
-            payload.0.clone(),
-            &format!("application.update:{}", claims.0.user_id),
-        )
-        .await
+        update_application(repositories.0.clone(), payload.0.clone(), &agent).await
     }
 
-    #[oai(path = "/application/:application_id/grants", method = "get")]
+    #[oai(path = "/application/:application_id/grants", method = "get", tag = ManageTags::Application, tag = ManageTags::Grant)]
     async fn get_grants_by_application_id(
         &self,
         repositories: Data<&ApiRepositories>,
         claims: BearerJwt,
         application_id: Path<String>,
     ) -> GetGrantByApplicationIdResponse {
-        if !claims
-            .0
-            .grants
-            .contains(&"dev.thmsn.auth.application.get_grants".to_string())
-        {
+        if !claims.0.has_grants(&[Grants::ApplicationGetGrants]) {
             return GetGrantByApplicationIdResponse::Unauthorized;
         }
 
         get_grants_by_application_id(repositories.0.clone(), &application_id).await
     }
 
-    #[oai(path = "/grant", method = "post")]
+    #[oai(path = "/grant", method = "post", tag = ManageTags::Grant)]
     async fn create_grant(
         &self,
         repositories: Data<&ApiRepositories>,
         claims: BearerJwt,
         payload: Json<CreateGrantPayload>,
     ) -> CreateGrantResponse {
-        if !claims
-            .0
-            .grants
-            .contains(&"dev.thmsn.auth.grant.create".to_string())
-        {
+        if !claims.0.has_grants(&[Grants::GrantCreate]) {
             return CreateGrantResponse::Unauthorized;
         }
 
-        create_grant(
-            repositories.0.clone(),
-            payload.0.clone(),
-            &format!("application.update:{}", claims.0.user_id),
-        )
-        .await
+        let agent = &format!("grant.create:{}", claims.0.user_id);
+
+        create_grant(repositories.0.clone(), payload.0, &agent).await
     }
 
-    #[oai(path = "/grant/:grant_id", method = "get")]
+    #[oai(path = "/grant/:grant_id", method = "get", tag = ManageTags::Grant)]
     async fn get_grant_by_id(
         &self,
         repositories: Data<&ApiRepositories>,
         claims: BearerJwt,
         grant_id: Path<String>,
     ) -> GetGrantByIdResponse {
-        if !claims
-            .0
-            .grants
-            .contains(&"dev.thmsn.auth.grant.get".to_string())
-        {
+        if !claims.0.has_grants(&[Grants::GrantGet]) {
             return GetGrantByIdResponse::Unauthorized;
         }
 
