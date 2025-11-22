@@ -60,15 +60,14 @@ async fn main() -> anyhow::Result<()> {
         )
         .init();
 
-    let swagger_uri =
-        |api_prefix: &str| match args.environment {
-            Environment::Local => {
-                format!("http://{}:{}{}", args.hostname, args.port, api_prefix);
-            }
-            _ => {
-                format!("http://{}{}", args.hostname, api_prefix);
-            }
+    let swagger_uri = |api_prefix: &str| match args.environment {
+        Environment::Local => {
+            format!("http://{}:{}{}", args.hostname, args.port, api_prefix)
         }
+        _ => {
+            format!("http://{}{}", args.hostname, api_prefix)
+        }
+    };
     let bind_uri = format!("{}:{}", args.address, args.port);
 
     let services = ApiServices::new(&args, &build_info).await?;
