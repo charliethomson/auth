@@ -6,7 +6,7 @@ if [[ -z "${DATABASE_URL}" && ! -f .env ]]; then
 fi
 
 if ! command -v sea-orm-cli &> /dev/null; then
-    cargo install "sea-orm-cli@^2.0.0-rc"
+    cargo install "sea-orm-cli@^2.0.0-rc.18"
 fi
 
 if [ ! -f ./migration/src/lib.rs ]; then
