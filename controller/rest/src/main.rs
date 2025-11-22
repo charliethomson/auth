@@ -69,7 +69,7 @@ async fn main() -> anyhow::Result<()> {
             format!("http://{}:{}{}", args.hostname, args.port, api_prefix)
         }
         _ => {
-            format!("http://{}{}", args.hostname, api_prefix)
+            format!("https://{}{}", args.hostname, api_prefix)
         }
     };
     let bind_uri = format!("{}:{}", args.address, args.port);
