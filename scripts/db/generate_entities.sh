@@ -1,13 +1,11 @@
 #!/usr/bin/env bash
 
-if [ ! -f .env ]; then
-    cp .env.debug .env
-    echo "Modify .env to point to your database and rerun"
+if [[ -z "${DATABASE_URL}" && ! -f .env ]]; then
+    echo "DATABASE_URL is unset and no dotenv was found"
     exit 1
 fi
 
-
-if [ command -v sea-orm-cli &> /dev/null ]; then
+if ! command -v sea-orm-cli &> /dev/null; then
     cargo install "sea-orm-cli@^2.0.0-rc"
 fi
 

@@ -116,6 +116,7 @@ impl BearerJwt {
                 StatusCode::UNAUTHORIZED,
             ));
         }
+
         if claims.expires < now {
             tracing::error!(
                 "JWT verification failed: Received expired token '{}' < '{}'",
@@ -150,6 +151,11 @@ impl SwaggerApi for Api {
 
 #[OpenApi]
 impl Api {
+    #[oai(path = "/health", method = "get")]
+    async fn health(&self) -> PlainText<String> {
+        PlainText("Healthy".into())
+    }
+
     #[oai(path = "/me", method = "get")]
     async fn me(&self, repositories: Data<&ApiRepositories>, claims: BearerJwt) -> GetUserResponse {
         let user_id = claims.0.user_id;

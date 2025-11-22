@@ -2,15 +2,27 @@ use argon2::{
     Argon2,
     password_hash::{PasswordHasher, SaltString, rand_core::OsRng},
 };
+use clap::Parser;
 use data::repository::{
     application::ApplicationRepository, connect, grant::GrantRepository, user::UserRepository,
 };
 
+#[derive(Parser)]
+pub struct Args {
+    #[arg(long, env)]
+    database_url: String,
+    #[arg(long, env, default_value = "admin")]
+    admin_username: String,
+    #[arg(long, env, default_value = "admin")]
+    admin_password: String,
+}
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+    let args = Args::parse();
+
     tracing_subscriber::fmt().init();
-    dotenvy::dotenv()?;
-    let conn = connect(&std::env::var("DATABASE_URL").expect("DATABASE_URL is not set")).await?;
+    let conn = connect(&args.database_url).await?;
 
     let salt = SaltString::generate(&mut OsRng);
     let argon = Argon2::default();
@@ -83,8 +95,8 @@ async fn main() -> anyhow::Result<()> {
         ),
     ];
 
-    let admin_username = "admin";
-    let admin_password_raw = "admin";
+    let admin_username = args.admin_username.clone();
+    let admin_password_raw = args.admin_password.clone();
     let admin_password = argon
         .hash_password(admin_password_raw.as_bytes(), salt.as_salt())
         .unwrap();
@@ -110,7 +122,7 @@ async fn main() -> anyhow::Result<()> {
     let admin = user_repository
         .create(
             agent,
-            admin_username,
+            &admin_username,
             &admin_password.to_string(),
             Some("Admin"),
             None,

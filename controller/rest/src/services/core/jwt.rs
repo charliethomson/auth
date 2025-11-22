@@ -57,7 +57,8 @@ impl Claims {
                 .into_iter()
                 .collect(),
             issued_at: Utc::now().timestamp() as u64,
-            expires: (Utc::now() + chrono::Duration::minutes(30)).timestamp() as u64,
+            // i dont care have a 24h token
+            expires: (Utc::now() + chrono::Duration::hours(24)).timestamp() as u64,
         }
     }
 }

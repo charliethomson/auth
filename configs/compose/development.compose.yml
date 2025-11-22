@@ -1,0 +1,60 @@
+services:
+  maria:
+    image: mariadb:latest
+    ports:
+      - "3306:3306"
+    environment:
+      MARIADB_ROOT_PASSWORD: thedebugpassword
+      MARIADB_DATABASE: auth
+    networks:
+      - auth
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 2s
+      timeout: 3s
+      retries: 3
+      start_period: 20s
+
+  seed:
+    build:
+      context: ../..
+      dockerfile: ./seed/Dockerfile
+    networks:
+      - auth
+    depends_on:
+      maria:
+        condition: service_started
+        restart: true
+    environment:
+      DATABASE_URL: mysql://root:thedebugpassword@maria:3306/auth
+      ADMIN_USERNAME: admin
+      ADMIN_PASSWORD: admin
+
+  rest:
+    build:
+      context: ../..
+      dockerfile: ./controller/rest/Dockerfile
+    networks:
+      - auth
+    depends_on:
+      maria:
+        condition: service_started
+        restart: true
+      seed:
+        condition: service_completed_successfully
+        restart: true
+    environment:
+      DATABASE_URL: mysql://root:thedebugpassword@maria:3306/auth
+      PORT: 8080
+      ADDRESS: 0.0.0.0
+      SIGNING_KEY: thedevsigningkeyissuperverycoolwow
+      HOSTNAME: auth.thmsn.local
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+networks:
+  auth:
