@@ -17,13 +17,14 @@ pub const PRODUCT_IDENTIFIER: &str = "dev.thmsn.auth.rest";
 
 #[derive(Clone, Copy, Debug, ValueEnum)]
 enum Environment {
+    Local,
     Development,
     Production,
 }
 
 #[derive(Parser)]
 struct Args {
-    #[arg(value_enum, long, env, default_value_t = Environment::Production)]
+    #[arg(value_enum, long, env, default_value_t = Environment::Local)]
     environment: Environment,
 
     #[arg(long, env, default_value_t = 8080)]
@@ -60,7 +61,14 @@ async fn main() -> anyhow::Result<()> {
         .init();
 
     let swagger_uri =
-        |api_prefix: &str| format!("http://{}:{}{}", args.hostname, args.port, api_prefix);
+        |api_prefix: &str| match args.environment {
+            Environment::Local => {
+                format!("http://{}:{}{}", args.hostname, args.port, api_prefix);
+            }
+            _ => {
+                format!("http://{}{}", args.hostname, api_prefix);
+            }
+        }
     let bind_uri = format!("{}:{}", args.address, args.port);
 
     let services = ApiServices::new(&args, &build_info).await?;
