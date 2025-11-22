@@ -49,6 +49,7 @@ services:
       ADDRESS: 0.0.0.0
       SIGNING_KEY: thedevsigningkeyissuperverycoolwow
       HOSTNAME: auth.thmsn.local
+      ENVIRONMENT: development
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
       interval: 10s
@@ -56,5 +57,24 @@ services:
       retries: 3
       start_period: 30s
 
+  caddy:
+    image: caddy:latest
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./configs/caddy/development.Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - auth
+    depends_on:
+      rest:
+        condition: service_healthy
+
 networks:
   auth:
+
+volumes:
+  caddy_data:
+  caddy_config:
