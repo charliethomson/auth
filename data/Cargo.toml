@@ -1,0 +1,12 @@
+[package]
+name = "data"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+sea-orm = { version = "2.0.0-rc.18", features = [ "sqlx-mysql", "runtime-tokio-rustls", "debug-print", "with-chrono", "with-uuid", "macros" ] }
+thiserror = "2.0.17"
+liberror = { git = "https://github.com/charliethomson/liberror" }
+serde = { version = "1.0.228", features = ["derive"] }
+valuable = { version = "0.1.1", features = ["derive"] }
+tracing = { version = "0.1.41", features = ["valuable"] }
