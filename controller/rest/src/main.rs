@@ -75,7 +75,7 @@ async fn main() -> anyhow::Result<()> {
     macro_rules! oai_service {
         ($e:expr,$t:ty) => {{
             let api_prefix = <$t as SwaggerApi>::base_uri();
-            let api_docs_prefix = format!("docs{api_prefix}");
+            let api_docs_prefix = format!("{api_prefix}/docs");
             let service = OpenApiService::new($e, <$t as SwaggerApi>::name(), &version)
                 .server(swagger_uri(&api_prefix));
             let ui = service.scalar();
