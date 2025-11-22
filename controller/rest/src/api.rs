@@ -86,10 +86,49 @@ impl BearerJwt {
             ));
         };
 
-        services
-            .jwt
-            .verify(&from_request.token)
-            .map_err(|e| poem::Error::new(e, StatusCode::UNAUTHORIZED))
+        let claims = services.jwt.verify(&from_request.token).map_err(|e| {
+            tracing::error!("JWT verification failed: {e}");
+            poem::Error::new(io::Error::other("Unauthorized"), StatusCode::UNAUTHORIZED)
+        })?;
+
+        if claims.issuer != crate::PRODUCT_IDENTIFIER {
+            tracing::error!(
+                "JWT verification failed: Received invalid issuer '{}', expected '{}'",
+                claims.issuer,
+                crate::PRODUCT_IDENTIFIER
+            );
+            return Err(poem::Error::new(
+                io::Error::other("Unauthorized"),
+                StatusCode::UNAUTHORIZED,
+            ));
+        }
+
+        let now = Utc::now().timestamp() as u64;
+
+        if claims.issued_at > now {
+            tracing::error!(
+                "JWT verification failed: Received invalid issued_at '{}' > '{}'",
+                claims.issued_at,
+                now
+            );
+            return Err(poem::Error::new(
+                io::Error::other("Unauthorized"),
+                StatusCode::UNAUTHORIZED,
+            ));
+        }
+        if claims.expires < now {
+            tracing::error!(
+                "JWT verification failed: Received expired token '{}' < '{}'",
+                claims.expires,
+                now
+            );
+            return Err(poem::Error::new(
+                io::Error::other("Unauthorized"),
+                StatusCode::UNAUTHORIZED,
+            ));
+        }
+
+        Ok(claims)
     }
 }
 

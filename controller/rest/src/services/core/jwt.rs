@@ -43,7 +43,7 @@ impl Claims {
                 .values()
                 .map(|v| &v.grant_id)
                 .cloned()
-                // This is retarded
+                // This is stupid
                 .collect::<HashSet<_>>()
                 .into_iter()
                 .collect(),
@@ -52,7 +52,7 @@ impl Claims {
                 .values()
                 .map(|v| &v.application_id)
                 .cloned()
-                // This is retarded
+                // This is stupid
                 .collect::<HashSet<_>>()
                 .into_iter()
                 .collect(),

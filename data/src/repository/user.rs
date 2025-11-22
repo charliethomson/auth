@@ -209,7 +209,7 @@ impl UserRepository {
             .ok_or(UserError::UserNotFound { user_id: user_id })
     }
 
-    // TODO: This is like 4 queries, kinda retarded
+    // TODO: This is like 4 queries, kinda stupid
     #[tracing::instrument(level = Level::DEBUG, "data.user.set_last_login")]
     pub async fn set_last_login(&self, user_id: i32) -> UserResult<UserDetailDto> {
         let mut model = model::user::Entity::find_by_id(user_id)
