@@ -5,14 +5,12 @@ auth.thmsn.local {
 
 manage.auth.thmsn.local {
     tls internal
-    reverse_proxy rest:8080 {
-        rewrite * /manage{uri}
-    }
+    rewrite * /manage{uri}
+    reverse_proxy rest:8080
 }
 
 debug.auth.thmsn.local {
     tls internal
-    reverse_proxy rest:8080 {
-        rewrite * /debug{uri}
-    }
+    rewrite * /debug{uri}
+    reverse_proxy rest:8080
 }
