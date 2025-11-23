@@ -138,7 +138,13 @@ async fn main() -> anyhow::Result<()> {
                 .data(services)
                 .data(repositories)
                 .with(Tracing)
-                .with(Cors::new()),
+                .with(
+                    Cors::new()
+                        .allow_origin_regex(".*")
+                        .allow_methods(vec!["GET", "POST", "PUT", "DELETE", "OPTIONS"])
+                        .allow_headers(vec!["Content-Type", "Authorization", "Accept"])
+                        .allow_credentials(true)
+                ),
         )
         .await?;
 
