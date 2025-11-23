@@ -1,0 +1,60 @@
+{
+  "name": "web-sys",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    "./package.json": "./package.json",
+    "./auth": {
+      "auth-web": "./src/auth.ts",
+      "types": "./dist/auth.d.ts",
+      "import": "./dist/auth.js"
+    },
+    "./manage": {
+      "auth-web": "./src/manage.ts",
+      "types": "./dist/manage.d.ts",
+      "import": "./dist/manage.js"
+    }
+  }
+,  "nx": {
+    "sourceRoot": "libs/web-sys/src",
+    "targets": {
+      "generate-dts": {
+        "executor": "nx:run-commands",
+        "options": {
+          "cwd": "libs/web-sys",
+          "commands": [
+            "npx mkdirp src/oai",
+            "npx orval --config orval.config.mjs"
+          ],
+          "parallel": false,
+          "env": {
+            "NODE_TLS_REJECT_UNAUTHORIZED": "0"
+          }
+        }
+      },
+      "build": {
+        "executor": "@nx/js:swc",
+        "outputs": [
+          "{options.outputPath}"
+        ],
+        "dependsOn": [
+          "generate-dts"
+        ],
+        "options": {
+          "outputPath": "libs/web-sys/dist",
+          "main": "libs/web-sys/src/index.ts",
+          "tsConfig": "libs/web-sys/tsconfig.lib.json",
+          "skipTypeCheck": true,
+          "stripLeadingPaths": true
+        }
+      }
+    }
+  },
+  "dependencies": {
+    "@swc/helpers": "~0.5.11"
+  }
+}

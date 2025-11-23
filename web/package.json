@@ -1,0 +1,23 @@
+{
+  "name": "auth-web",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "apps/*",
+    "libs/*"
+  ],
+  "devDependencies": {
+    "@nx/js": "^22.1.1",
+    "@swc-node/register": "~1.9.1",
+    "@swc/cli": "~0.6.0",
+    "@swc/core": "~1.5.7",
+    "@swc/helpers": "~0.5.11",
+    "@types/node": "20.19.9",
+    "nx": "22.1.1",
+    "orval": "^7.16.1",
+    "prettier": "^2.6.2",
+    "tslib": "^2.3.0",
+    "typescript": "~5.9.2"
+  }
+}
