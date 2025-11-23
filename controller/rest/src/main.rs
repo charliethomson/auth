@@ -87,29 +87,54 @@ async fn main() -> anyhow::Result<()> {
         ($e:expr,$t:ty) => {{
             let api_prefix = <$t as SwaggerApi>::base_uri();
             let api_docs_prefix = format!("{api_prefix}/docs");
+            let api_spec_prefix = format!("{api_prefix}/openapi");
             let service = OpenApiService::new($e, <$t as SwaggerApi>::name(), &version)
                 .server(swagger_uri(&api_prefix));
             let ui = service.scalar();
+            let spec_service = service.spec_endpoint();
 
-            (api_prefix, service, api_docs_prefix, ui)
+            (
+                api_prefix,
+                service,
+                api_spec_prefix,
+                spec_service,
+                api_docs_prefix,
+                ui,
+            )
         }};
     }
 
-    let (api_prefix, api_service, api_docs_prefix, api_ui) = oai_service!(Api, Api);
-    let (manage_api_prefix, manage_api_service, manage_api_docs_prefix, manage_api_ui) =
-        oai_service!(ManageApi, ManageApi);
-    let (debug_api_prefix, debug_api_service, debug_api_docs_prefix, debug_api_ui) =
-        oai_service!(DebugApi, DebugApi);
+    let (api_prefix, api_service, api_spec_prefix, api_spec_service, api_docs_prefix, api_ui) =
+        oai_service!(Api, Api);
+    let (
+        manage_api_prefix,
+        manage_api_service,
+        manage_api_spec_prefix,
+        manage_api_spec_service,
+        manage_api_docs_prefix,
+        manage_api_ui,
+    ) = oai_service!(ManageApi, ManageApi);
+    let (
+        debug_api_prefix,
+        debug_api_service,
+        debug_api_spec_prefix,
+        debug_api_spec_service,
+        debug_api_docs_prefix,
+        debug_api_ui,
+    ) = oai_service!(DebugApi, DebugApi);
 
     Server::new(TcpListener::bind(bind_uri))
         .run(
             Route::new()
                 .nest(api_prefix, api_service)
                 .nest(api_docs_prefix, api_ui)
+                .nest(api_spec_prefix, api_spec_service)
                 .nest(manage_api_prefix, manage_api_service)
                 .nest(manage_api_docs_prefix, manage_api_ui)
+                .nest(manage_api_spec_prefix, manage_api_spec_service)
                 .nest(debug_api_prefix, debug_api_service)
                 .nest(debug_api_docs_prefix, debug_api_ui)
+                .nest(debug_api_spec_prefix, debug_api_spec_service)
                 .data(services)
                 .data(repositories)
                 .with(Tracing)
